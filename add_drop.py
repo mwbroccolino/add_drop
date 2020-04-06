@@ -7,8 +7,13 @@ import sys
 import urllib2
 import datetime
 import csv
+import json 
 
 from optparse import OptionParser
+
+import logging 
+log = logging.getLogger()
+log.setLevel(logging.INFO) 
 
 def sortHittersByXwoba(a,b):
     if a["xwoba"] < b["xwoba"]:  return 1
@@ -20,6 +25,46 @@ def sortPitchersByXwoba(a,b):
     if a["xwoba"] == b["xwoba"]: return 0
     else: return 1
 
+def query_statcast_barrel_leaderboard(player_type="batter", year=2019, debug=False): 
+    # ----------------
+    # Assemble the URL
+    # ----------------
+    url = "https://baseballsavant.mlb.com/leaderboard/statcast?type=%s&year=%d&position=&team=&min=q" % (player_type, year) 
+
+    if debug: 
+        log.info("Querying URL: %s" % url) 
+
+    #--------------
+    # Query the URL 
+    #--------------
+    data = urllib2.urlopen(url)
+    data = data.readlines()
+
+    #----------------
+    # Gather the data
+    #----------------
+    odata = []
+    for iii in range(len(data)):
+        line = data[iii]
+        if line.count("Trout"): 
+            print len(line)
+            print type(line) 
+            print json.loads(line)
+        """ 
+        if line.count("\"player_name\""):
+            name = line.split(">")[1].split("<")[0]
+            spl = data[iii+2].strip().split("-")
+            try: 
+                woba  = float(spl[0])
+                xwoba = float(spl[1])
+            except ValueError: 
+                woba  = 0.0
+                xwoba = 0.0
+            odata.append({"name":name, "woba":woba, "xwoba":xwoba})
+            iii += 2
+        """
+    return odata
+        
 def query_statcast(start_date, end_date, player_type="batter", min_pas=10, debug=False): 
     #----------------
     # Assemble the URL
@@ -106,6 +151,24 @@ def write_output(input_list, ofile, keys=None):
 
     ofile.close()
 
+def main(opts, args): 
+    pass 
+
+def get_date_range(start_date, end_date): 
+    start = start_date
+    end   = end_date
+
+    if not start_date: 
+        start = "2019-03-20" # opening day
+    if not end_date: 
+        now = datetime.datetime.now() 
+        if now.month < 10: 
+            end = "%d-0%d-%d" % (now.year, now.month, now.day)
+        else: 
+            end = "%d-%d-%d" % (now.year, now.month, now.day)
+
+    return start, end 
+
 if __name__ == "__main__":
     #-------------
     # Command Line
@@ -126,30 +189,18 @@ if __name__ == "__main__":
     parser.add_option("--debug", default=False, action="store_true") 
     
     opts, args = parser.parse_args()
-    
-
-    if not opts.h_file or not opts.p_file or len(args) == 1:
-        print "Hitter file: /Users/michaelbroccolino/Downloads/Fantrax-players-SMCM Alums(19).csv"
-        print "Pithcer file: /Users/michaelbroccolino/Downloads/Fantrax-players-SMCM Alums(20).csv"
-        print "Start Date: 2019-04-15"
-        print "Usage: ./add_drop.py --h-file=19 --p-file=20 --start-date=2019-04-15"
-        sys.exit() 
 
     #--------------------------------------
     # Figure out the date range to query on
     #---------------------------------------
-    start_date = opts.start_date
-    end_date   = opts.end_date
+    start_date, end_date = get_date_range(opts.start_date, opts.end_date)
 
-    if not start_date: 
-        start_date = "2019-03-20" # opening day
-    if not end_date: 
-        now = datetime.datetime.now() 
-        if now.month < 10: 
-            end_date = "%d-0%d-%d" % (now.year, now.month, now.day)
-        else: 
-            end_date = "%d-%d-%d" % (now.year, now.month, now.day)
-
+    # --------------------------
+    # Get the Barrel Leaderboard
+    # --------------------------
+    leaderboard = query_statcast_barrel_leaderboard() 
+    
+    """
     #---------------
     # Query Statcast
     #---------------
@@ -230,3 +281,5 @@ if __name__ == "__main__":
 
     write_output(hitter_report, "fa_hitters.csv", keys=hitter_keys)
     write_output(pitcher_report, "fa_pitchers.csv", pitcher_keys)
+
+    """

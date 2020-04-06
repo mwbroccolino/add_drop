@@ -2,9 +2,58 @@ import pytest
 import mock
 import urllib2 
 import csv
+import datetime 
 
 from add_drop import * 
 
+class Opts:
+    def __init__(self): 
+        opts.h_file = None
+        opts.p_file = None
+        opts.start_date = ""
+        opts.end_date = "" 
+
+def test_get_date_range(): 
+    # test 1 
+    start_date = None
+    end_date = None
+
+    start, end = get_date_range(start_date, end_date) 
+    
+    now = datetime.datetime.now()
+ 
+    assert start == "2019-03-20"
+    assert end == "%d-0%d-%d" % (now.year, now.month, now.day)   
+    
+    # tes 2 
+    start_date = "2019-05-20"
+    end_date = None
+
+    start, end = get_date_range(start_date, end_date) 
+    
+    now = datetime.datetime.now()
+ 
+    assert start == "2019-05-20"
+    assert end == "%d-0%d-%d" % (now.year, now.month, now.day)   
+ 
+    # test 3 
+    start_date = "2019-05-20"
+    end_date = "2019-05-27"
+
+    start, end = get_date_range(start_date, end_date) 
+ 
+    assert start == "2019-05-20"
+    assert end == "2019-05-27"
+    
+    # test 3 
+    start_date = None
+    end_date = "2019-05-27"
+
+    start, end = get_date_range(start_date, end_date) 
+ 
+    assert start == "2019-03-20"
+    assert end == "2019-05-27"
+    
 def test_sort_hitters_by_xwoba(): 
     a = {}
     b = {}
